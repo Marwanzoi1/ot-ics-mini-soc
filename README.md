@@ -220,35 +220,35 @@ A02 was observed with latency on the order of one second. Other scenarios were e
 ### Process baseline
 
 <p align="center">
-  <img src="assets/screenshots/01-hmi-process-overview.png" alt="Ignition HMI process overview" width="850">
+  <img src="assets/screenshots/01-hmi-process-overview.jpg" alt="Ignition HMI process overview" width="850">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/02-historian-baseline.png" alt="Normal PLC behavior recorded by the InfluxDB historian" width="850">
+  <img src="assets/screenshots/02-historian-baseline.jpg" alt="Normal PLC behavior recorded by the InfluxDB historian" width="850">
 </p>
 
 ### Detection and correlation
 
 <p align="center">
-  <img src="assets/screenshots/03-modbus-recon-detection.png" alt="End-to-end unauthorized Modbus reconnaissance detection" width="850">
+  <img src="assets/screenshots/03-modbus-recon-detection.jpg" alt="End-to-end unauthorized Modbus reconnaissance detection" width="850">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/04-unauthorized-modbus-write.png" alt="Unauthorized Modbus control command detected in Wazuh" width="850">
+  <img src="assets/screenshots/04-unauthorized-modbus-write.jpg" alt="Unauthorized Modbus control command detected in Wazuh" width="850">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/05-critical-process-correlation.png" alt="Critical process-aware correlation in Wazuh" width="850">
+  <img src="assets/screenshots/05-critical-process-correlation.jpg" alt="Critical process-aware correlation in Wazuh" width="850">
 </p>
 
 ### Incident and response
 
 <p align="center">
-  <img src="assets/screenshots/06-incident-aggregation.png" alt="Aggregated OT security incident" width="850">
+  <img src="assets/screenshots/06-incident-aggregation.jpg" alt="Aggregated OT security incident" width="850">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/07-bounded-pfsense-containment.png" alt="Temporary attacker containment through pfSense" width="850">
+  <img src="assets/screenshots/07-bounded-pfsense-containment.jpg" alt="Temporary attacker containment through pfSense" width="850">
 </p>
 
 Evidence provenance and screenshot mapping: [`docs/06-evidence-catalog.md`](docs/06-evidence-catalog.md).
@@ -269,14 +269,14 @@ Evidence provenance and screenshot mapping: [`docs/06-evidence-catalog.md`](docs
 │   └── 06-evidence-catalog.md
 └── assets/
     └── screenshots/
-        ├── 01-hmi-process-overview.png
-        ├── 02-historian-baseline.png
-        ├── 03-modbus-recon-detection.png
-        ├── 04-unauthorized-modbus-write.png
-        ├── 05-critical-process-correlation.png
-        ├── 06-incident-aggregation.png
-        ├── 07-bounded-pfsense-containment.png
-        └── 08-conpot-deception-service.png
+        ├── 01-hmi-process-overview.jpg
+        ├── 02-historian-baseline.jpg
+        ├── 03-modbus-recon-detection.jpg
+        ├── 04-unauthorized-modbus-write.jpg
+        ├── 05-critical-process-correlation.jpg
+        ├── 06-incident-aggregation.jpg
+        ├── 07-bounded-pfsense-containment.jpg
+        └── 08-conpot-deception-service.jpg
 ```
 
 ## Documentation
