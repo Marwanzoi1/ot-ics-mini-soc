@@ -1,0 +1,83 @@
+868-			<tracker>1788127053</tracker>
+869-			<type>block</type>
+870-			<interface>opt3</interface>
+871-			<ipprotocol>inet</ipprotocol>
+872-			<tag></tag>
+873-			<tagged></tagged>
+874-			<max></max>
+875-			<max-src-nodes></max-src-nodes>
+876-			<max-src-conn></max-src-conn>
+877-			<max-src-states></max-src-states>
+878-			<statetimeout></statetimeout>
+879-			<statepolicy></statepolicy>
+880-			<statetype><![CDATA[keep state]]></statetype>
+881-			<os></os>
+882-			<source>
+883:				<address>WAZUH_BLOCKLIST</address>
+884-			</source>
+885-			<destination>
+886-				<address>10.10.40.0/24</address>
+887-			</destination>
+888-			<log></log>
+889-			<descr><![CDATA[WAZUH - Automated containment of blocklisted OT sources]]></descr>
+890-			<created>
+891-				<time>1788127053</time>
+892-				<username><![CDATA[admin@10.10.20.33 (Local Database)]]></username>
+893-			</created>
+894-			<updated>
+895-				<time>1789052578</time>
+896-				<username><![CDATA[admin@10.10.20.33 (Local Database)]]></username>
+897-			</updated>
+898-		</rule>
+899-		<rule>
+900-			<id></id>
+901-			<tracker>1788020160</tracker>
+902-			<type>pass</type>
+903-			<interface>opt3</interface>
+904-			<ipprotocol>inet</ipprotocol>
+905-			<tag></tag>
+906-			<tagged></tagged>
+907-			<max></max>
+908-			<max-src-nodes></max-src-nodes>
+--
+1033-				<username><![CDATA[admin@10.10.20.33 (Local Database)]]></username>
+1034-			</created>
+1035-			<disabled></disabled>
+1036-		</rule>
+1037-		<separator>
+1038-			<opt1></opt1>
+1039-			<opt2></opt2>
+1040-			<opt3></opt3>
+1041-			<wan></wan>
+1042-		</separator>
+1043-	</filter>
+1044-	<shaper></shaper>
+1045-	<ipsec></ipsec>
+1046-	<aliases>
+1047-		<alias>
+1048:			<name>WAZUH_BLOCKLIST</name>
+1049-			<type>host</type>
+1050-			<address>192.0.2.1</address>
+1051-			<descr><![CDATA[Temporary Wazuh automated containment]]></descr>
+1052-			<detail><![CDATA[Entry added Sun, 30 Aug 2026 22:52:37 +0100]]></detail>
+1053-		</alias>
+1054-		<alias>
+1055-			<name>CONPOT_TCP_DECOY_PORTS</name>
+1056-			<type>port</type>
+1057-			<address>2121 5020 8800 10201 44818</address>
+1058-			<descr><![CDATA[Allowed Conpot TCP deception services]]></descr>
+1059-			<detail><![CDATA[Entry added Tue, 08 Sep 2026 16:06:22 +0100||Entry added Tue, 08 Sep 2026 16:06:22 +0100||Entry added Tue, 08 Sep 2026 16:06:22 +0100||Entry added Tue, 08 Sep 2026 16:07:25 +0100||Entry added Tue, 08 Sep 2026 16:07:25 +0100]]></detail>
+1060-		</alias>
+1061-	</aliases>
+1062-	<proxyarp></proxyarp>
+1063-	<cron>
+1064-		<item>
+1065-			<minute>*/1</minute>
+1066-			<hour>*</hour>
+1067-			<mday>*</mday>
+1068-			<month>*</month>
+1069-			<wday>*</wday>
+1070-			<who>root</who>
+1071-			<command>/usr/sbin/newsyslog</command>
+1072-		</item>
+1073-		<item>

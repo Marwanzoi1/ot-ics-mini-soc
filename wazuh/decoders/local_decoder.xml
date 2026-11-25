@@ -1,0 +1,50 @@
+<!-- Local Decoders -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!--
+  - Allowed static fields:
+  - location   - where the log came from (only on FTS)
+  - srcuser    - extracts the source username
+  - dstuser    - extracts the destination (target) username
+  - user       - an alias to dstuser (only one of the two can be used)
+  - srcip      - source ip
+  - dstip      - dst ip
+  - srcport    - source port
+  - dstport    - destination port
+  - protocol   - protocol
+  - id         - event id
+  - url        - url of the event
+  - action     - event action (deny, drop, accept, etc)
+  - status     - event status (success, failure, etc)
+  - extra_data - Any extra data
+-->
+
+<decoder name="local_decoder_example">
+    <program_name>local_decoder_example</program_name>
+</decoder>
+<decoder name="pfsense-filterlog">
+  <prematch type="pcre2">filterlog\[\d+\]:</prematch>
+  <regex type="pcre2">filterlog\[\d+\]:\s+[^,]*,[^,]*,[^,]*,[^,]*,([^,]+),([^,]+),([^,]+),([^,]+),4,(?:[^,]*,){7}(tcp|udp),[^,]+,(\d{1,3}(?:\.\d{1,3}){3}),(\d{1,3}(?:\.\d{1,3}){3}),(\d+),(\d+)</regex>
+  <order>interface,reason,action,direction,protocol,srcip,dstip,srcport,dstport</order>
+</decoder>
+<!-- Conpot honeypot connection decoder -->
+
+<!-- ====================================================== -->
+<!-- Conpot Modbus connection decoder                       -->
+<!-- ====================================================== -->
+
+<!-- Parent: only logs explicitly tagged as program "conpot" -->
+<decoder name="conpot-connection">
+  <program_name>^conpot$</program_name>
+</decoder>
+
+<!-- Child: extract the attacker IP and source port -->
+<decoder name="conpot-connection">
+  <parent>conpot-connection</parent>
+
+  <regex type="pcre2">.*New Modbus connection from ([0-9]{1,3}(?:\.[0-9]{1,3}){3}):([0-9]+)\.</regex>
+
+  <order>srcip,srcport</order>
+</decoder>

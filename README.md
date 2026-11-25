@@ -1,363 +1,332 @@
-# OT/ICS Mini-SOC - Explainable Detection, Correlation and Bounded Response
+# OT/ICS Mini-SOC
 
-> Design and validation of a virtualized OT/ICS security monitoring lab that observes Modbus/TCP traffic, detects unauthorized industrial actions, adds asset and process context, aggregates alerts into incidents, and applies reversible containment through pfSense.
->
-> Cybersecurity engineering internship project - ENSIASD Taroudant, 2026.
+A laboratory OT/ICS cybersecurity project implementing network monitoring, context-aware detection, risk correlation, incident aggregation, and bounded automated containment around a simulated industrial process.
 
-<p align="left">
-  <img alt="SIEM" src="https://img.shields.io/badge/SIEM-Wazuh-005571?style=flat-square">
-  <img alt="Network monitoring" src="https://img.shields.io/badge/Network%20monitoring-Zeek-EF3B2D?style=flat-square">
-  <img alt="Firewall" src="https://img.shields.io/badge/Firewall-pfSense-212121?style=flat-square">
-  <img alt="Industrial protocol" src="https://img.shields.io/badge/Protocol-Modbus%2FTCP-2E8B57?style=flat-square">
-  <img alt="PLC" src="https://img.shields.io/badge/PLC-OpenPLC-F59E0B?style=flat-square">
-  <img alt="HMI" src="https://img.shields.io/badge/HMI-Ignition-FF6B00?style=flat-square">
-  <img alt="Historian" src="https://img.shields.io/badge/Historian-InfluxDB-22ADF6?style=flat-square">
-  <img alt="Honeypot" src="https://img.shields.io/badge/Deception-Conpot-7C3AED?style=flat-square">
-</p>
+## 1. Project Objectives
 
----
+The Mini-SOC was designed to demonstrate an end-to-end OT security monitoring workflow:
 
-## Table of contents
+1. Observe industrial Modbus/TCP traffic.
+2. Identify unauthorized clients and suspicious operations.
+3. Apply OT asset context and threat intelligence.
+4. Reduce false positives by distinguishing authorized engineering activity.
+5. Correlate cyber events with process-state anomalies.
+6. Assign deterministic risk scores.
+7. Aggregate high-confidence events into critical incidents.
+8. Execute bounded and reversible network containment.
 
-- [What this project is](#what-this-project-is)
-- [Why it is different](#why-it-is-different)
-- [Architecture at a glance](#architecture-at-a-glance)
-- [Detection and response chain](#detection-and-response-chain)
-- [Security capabilities](#security-capabilities)
-- [Validation results](#validation-results)
-- [Evidence](#evidence)
-- [Repository layout](#repository-layout)
-- [Documentation](#documentation)
-- [Reproducing the lab](#reproducing-the-lab)
-- [Limitations and honest scope](#limitations-and-honest-scope)
-- [Roadmap](#roadmap)
-- [Author](#author)
+## 2. Lab Architecture
 
----
+The environment was implemented as a segmented virtual OT/ICS lab.
 
-## What this project is
-
-This project is a reduced but functional OT/ICS environment built to answer a practical question:
-
-**Can a small SOC distinguish legitimate industrial activity from unauthorized Modbus behavior, add operational context, and contain a high-confidence source without disrupting the approved control path?**
-
-The lab combines:
-
-1. **A simulated industrial process** - OpenPLC exposes Modbus/TCP variables, Ignition provides an engineering/HMI view, and InfluxDB records process history.
-2. **Passive network visibility** - Zeek observes OT traffic without becoming an inline enforcement point.
-3. **Centralized detection** - Wazuh ingests Zeek, pfSense, Conpot, host, integrity and identity telemetry.
-4. **Contextual correlation** - custom rules consider source, destination, asset criticality, process value, threat context and event frequency.
-5. **Controlled response** - high-confidence attacker activity can trigger a temporary pfSense block while legitimate engineering and historian flows remain available.
-6. **Formal validation** - ten scenarios, A01-A10, test normal traffic, reconnaissance, unauthorized control actions, deception, false-positive resistance and reversible containment.
-
-This repository is currently a **documentation and evidence package**. It describes the verified lab and its results. Sanitized deployment configurations and automation scripts still need to be exported before the environment can be rebuilt from the repository alone.
-
-## Why it is different
-
-Many lab projects stop after generating an alert. This one tests the full security chain:
-
-```text
-Industrial action
-    -> passive Modbus telemetry
-    -> source-aware detection
-    -> process and asset context
-    -> risk scoring
-    -> incident aggregation
-    -> bounded network containment
-    -> regression checks for legitimate operations
-```
-
-The project also includes negative controls. A legitimate write from `ENG-WS01` must remain allowed and must not trigger the same critical rule as an equivalent write from `ATTACKER01`. That distinction is more important than simply producing a large number of alerts.
-
----
-
-## Architecture at a glance
-
-The lab separates administration, SOC services, engineering, OT control and attack validation into distinct zones. pfSense is the enforcement point; Zeek is passive; Wazuh performs correlation.
-
-```mermaid
-flowchart TB
-    subgraph IDMZ["IDMZ - 10.10.10.0/24"]
-        JUMP["JUMP-HOST01\n10.10.10.40"]
-        CONPOT["CONPOT01\n10.10.10.30"]
-    end
-
-    subgraph SOC["SOC - 10.10.20.0/24"]
-        SIEM["SOC-SIEM01\nWazuh + aggregator"]
-        SENSOR["OT-SENSOR01\nZeek sensor"]
-    end
-
-    subgraph ENG["Engineering - 10.10.30.0/24"]
-        EWS["ENG-WS01\nIgnition HMI"]
-    end
-
-    subgraph OT["OT control - 10.10.40.0/24"]
-        PLC["OT-PLC01\nOpenPLC / Modbus TCP"]
-        HIST["OT-HIST01\nInfluxDB"]
-    end
-
-    ATTACKER["ATTACKER01\n10.10.50.10"]
-    FW["pfSense-ICS\nRouting, filtering, logging, response"]
-
-    JUMP --> FW
-    CONPOT --> FW
-    SIEM --> FW
-    SENSOR --> FW
-    EWS --> FW
-    PLC --> FW
-    HIST --> FW
-    ATTACKER --> FW
-    SENSOR -. "passive OT telemetry" .-> SIEM
-```
-
-### Component inventory
-
-| Component | Address | Zone | Primary role |
-|---|---:|---|---|
-| `pfSense-ICS` | Multi-zone gateways | Inter-zone | Routing, filtering, logging and bounded response |
-| `JUMP-HOST01` | `10.10.10.40` | IDMZ | Controlled SSH bastion to the engineering station |
-| `CONPOT01` | `10.10.10.30` | IDMZ | OT honeypot and deception service |
-| `SOC-SIEM01` | `10.10.20.20` | SOC | Wazuh manager, indexer, dashboard and incident aggregator |
-| `OT-SENSOR01` | `10.10.20.40` | Monitoring | Zeek sensor and Wazuh agent |
-| `ENG-WS01` | `10.10.30.20` | Engineering | Ignition HMI and authorized industrial control |
-| `OT-PLC01` | `10.10.40.41` | OT control | OpenPLC Runtime and Modbus/TCP |
-| `OT-HIST01` | `10.10.40.30` | OT control | InfluxDB process historian |
-| `ATTACKER01` | `10.10.50.10` | Validation | Controlled offensive test source |
-
-Full design rationale, addressing and allowed conduits: [`docs/01-architecture.md`](docs/01-architecture.md).
-
----
-
-## Detection and response chain
-
-```mermaid
-flowchart LR
-    A["Modbus action"] --> B["Zeek telemetry"]
-    B --> C["Wazuh custom rules"]
-    C --> D["Process and asset context"]
-    D --> E["Risk score and incident"]
-    E --> F["Temporary pfSense block"]
-```
-
-| Layer | Responsibility | Examples |
+| Asset | IP | Role |
 |---|---|---|
-| Industrial process | Produce realistic state and control traffic | OpenPLC, Ignition, InfluxDB |
-| Network visibility | Observe Modbus without blocking inline | Zeek `modbus.log` and register-change telemetry |
-| Detection | Identify unauthorized or repeated behavior | Wazuh rules `100101`, `100102`, `100104` |
-| Process context | Determine whether a variable is outside an approved range | `110511`, critical correlation `110512` |
-| Threat and asset context | Raise priority based on known source and target criticality | local CDB indicators, `130100/130101`, `140100-140102` |
-| Incident handling | Deduplicate related alerts and preserve evidence | incident aggregator, rule `160160` |
-| Response | Apply scoped, reversible containment | pfSense attacker table with automatic expiry |
-| SOC resilience | Detect blind spots and unauthorized changes | health rules, FIM, privileged-action correlation |
+| JUMP-HOST01 | 10.10.10.40 | IDMZ administrative bastion |
+| CONPOT01 | 10.10.10.30 | OT honeypot |
+| SOC-SIEM01 | 10.10.20.20 | Wazuh manager, indexer, dashboard and incident aggregation |
+| OT-SENSOR01 | 10.10.20.40 | Zeek sensor and Wazuh agent |
+| ENG-WS01 | 10.10.30.20 | Engineering workstation |
+| OT-HIST01 | 10.10.40.30 | Historian / InfluxDB |
+| OT-PLC01 | 10.10.40.41 | OpenPLC / Modbus TCP |
+| ATTACKER01 | 10.10.50.10 | Controlled Kali attack host |
+| pfSense-ICS | 10.10.20.1 | Segmentation firewall and containment enforcement |
 
-Detailed rule logic: [`docs/03-detection-engineering.md`](docs/03-detection-engineering.md).
+Network zones:
 
----
+- `10.10.10.0/24` — IDMZ
+- `10.10.20.0/24` — SOC / supervision
+- `10.10.30.0/24` — engineering
+- `10.10.40.0/24` — OT
+- `10.10.50.0/24` — controlled test / attacker network
 
-## Security capabilities
+## 3. OT Monitoring Architecture
 
-### OT-aware detection
+OT-SENSOR01 operates as an inline Layer-2 bridge on the monitored engineering-to-PLC path.
 
-- Unauthorized Modbus reads from a non-approved source.
-- Repeated reads correlated into higher-severity reconnaissance.
-- Unauthorized `WRITE_SINGLE_COIL` and `WRITE_SINGLE_REGISTER` operations.
-- Source-aware logic that permits legitimate engineering writes.
-- Out-of-range setpoint detection and process-aware correlation.
-- MITRE ATT&CK for ICS mapping applied only where supported by observed behavior.
+Zeek monitors the bridge interface `br0` and loads the built-in Modbus analyzer together with Modbus memory-map tracking.
 
-### Deception and threat context
-
-- Conpot exposes intentional OT services while its real management plane is treated separately.
-- Repeated honeypot interactions are correlated by frequency.
-- A local Wazuh CDB list demonstrates controlled IOC enrichment without pretending to be a live external feed.
-
-### Risk and incident handling
-
-- Asset criticality changes alert priority.
-- Risk cases were validated at `60/100`, `80/100`, `90/100` and `100/100`.
-- Related events are consolidated into an incident with source, target, asset, score and confidence.
-- Cooldown logic prevents rapid repetitions from creating unnecessary duplicate incidents.
-
-### SOC self-monitoring
-
-- Loss of Zeek, Conpot or Wazuh agent telemetry becomes an alert.
-- File integrity monitoring covers critical Zeek, Wazuh and Conpot configuration.
-- Privileged actions, SSH failures and account lifecycle events are monitored.
-- Identity + FIM correlation attributes a sensitive Zeek configuration change to the responsible user.
-
-### Controlled response
-
-- The response is limited to a high-confidence source.
-- The attacker is inserted into a pfSense block table.
-- The block automatically expires.
-- Engineering and historian traffic are rechecked to prove that containment is not equivalent to shutting down the OT environment.
-
----
-
-## Validation results
-
-All ten formal scenarios passed in the documented lab.
-
-| ID | Scenario | Expected signal | Result |
-|---|---|---|---|
-| A01 | Normal OT baseline | No targeted critical rules | PASS |
-| A02 | Unauthorized Modbus read | `100102` | PASS |
-| A03 | Repeated unauthorized reads | `100104` | PASS |
-| A04 | Unauthorized coil write | `100101` | PASS |
-| A05 | Unauthorized register/setpoint write | `100101` + context | PASS |
-| A06 | Process/historian correlation | Wazuh + InfluxDB evidence | PASS |
-| A07 | Conpot Modbus interaction | `120001` | PASS |
-| A08 | Repeated Conpot probing | `120002` | PASS |
-| A09 | Legitimate engineering action | No `100101` for `ENG-WS01` | PASS |
-| A10 | Bounded automated response | Wazuh signal + pfSense containment | PASS |
-
-A02 was observed with latency on the order of one second. Other scenarios were evaluated against the explicit targets in the A01-A10 test matrix. The complete methodology and evidence requirements are in [`docs/04-validation.md`](docs/04-validation.md).
-
----
-
-## Evidence
-
-### Process baseline
-
-<p align="center">
-  <img src="assets/screenshots/01-hmi-process-overview.jpg" alt="Ignition HMI process overview" width="850">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/02-historian-baseline.jpg" alt="Normal PLC behavior recorded by the InfluxDB historian" width="850">
-</p>
-
-### Detection and correlation
-
-<p align="center">
-  <img src="assets/screenshots/03-modbus-recon-detection.jpg" alt="End-to-end unauthorized Modbus reconnaissance detection" width="850">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/04-unauthorized-modbus-write.jpg" alt="Unauthorized Modbus control command detected in Wazuh" width="850">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/05-critical-process-correlation.jpg" alt="Critical process-aware correlation in Wazuh" width="850">
-</p>
-
-### Incident and response
-
-<p align="center">
-  <img src="assets/screenshots/06-incident-aggregation.jpg" alt="Aggregated OT security incident" width="850">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/07-bounded-pfsense-containment.jpg" alt="Temporary attacker containment through pfSense" width="850">
-</p>
-
-Evidence provenance and screenshot mapping: [`docs/06-evidence-catalog.md`](docs/06-evidence-catalog.md).
-
----
-
-## Repository layout
+Relevant Zeek artifacts:
 
 ```text
-.
-├── README.md
-├── docs/
-│   ├── 01-architecture.md
-│   ├── 02-deployment.md
-│   ├── 03-detection-engineering.md
-│   ├── 04-validation.md
-│   ├── 05-hardening-and-limitations.md
-│   └── 06-evidence-catalog.md
-└── assets/
-    └── screenshots/
-        ├── 01-hmi-process-overview.jpg
-        ├── 02-historian-baseline.jpg
-        ├── 03-modbus-recon-detection.jpg
-        ├── 04-unauthorized-modbus-write.jpg
-        ├── 05-critical-process-correlation.jpg
-        ├── 06-incident-aggregation.jpg
-        ├── 07-bounded-pfsense-containment.jpg
-        └── 08-conpot-deception-service.jpg
+zeek/
+├── local.zeek
+├── bridge-and-status.txt
+└── config/
 ```
 
-## Documentation
+The upstream Zeek `track-memmap.zeek` policy is referenced by configuration but is not included as custom project code.
 
-| Document | Covers |
+## 4. Detection Pipeline
+
+The main detection pipeline is:
+
+Modbus/TCP traffic
+        |
+        v
+OT-SENSOR01 / Zeek
+        |
+        v
+JSON Modbus telemetry
+        |
+        v
+Wazuh custom OT rules
+        |
+        +--> Source authorization context
+        +--> Critical-asset context
+        +--> Threat-intelligence context
+        +--> Process-variable context
+        |
+        v
+Deterministic risk scoring
+        |
+        v
+Temporal / process correlation
+        |
+        v
+Critical OT incident
+
+Important rules include:
+
+| Rule | Purpose |
 |---|---|
-| [`01 - Architecture`](docs/01-architecture.md) | Zones, hosts, addressing, trust boundaries and allowed conduits |
-| [`02 - Deployment`](docs/02-deployment.md) | Component roles, telemetry paths and implementation notes |
-| [`03 - Detection engineering`](docs/03-detection-engineering.md) | Wazuh rule families, context, scoring, aggregation and response |
-| [`04 - Validation`](docs/04-validation.md) | A01-A10 test matrix, success criteria and observed results |
-| [`05 - Hardening and limitations`](docs/05-hardening-and-limitations.md) | Exposure findings, hardening plan and honest scope |
-| [`06 - Evidence catalog`](docs/06-evidence-catalog.md) | Screenshot provenance and claim-to-evidence mapping |
+| 100101 | Unauthorized Modbus write |
+| 100102 | Unauthorized Modbus read |
+| 100104 | Repeated unauthorized reads |
+| 110511 | Process setpoint anomaly |
+| 110512 | High-confidence cyber/process correlation |
+| 120001 | Conpot interaction |
+| 120002 | Repeated honeypot interaction |
+| 130100 | Known threat-intelligence source |
+| 140100 | Unauthorized write to critical OT asset |
+| 140101 | Unauthorized read to critical OT asset |
+| 140102 | Known IOC communicating with critical asset |
+| 160160 | Critical aggregated OT incident |
 
----
+Custom detection rules are stored under `wazuh/rules/`.
 
-## Reproducing the lab
+## 5. Risk Model
 
-The architecture can be rebuilt manually from the documentation, but the repository is **not yet a one-command deployment**.
+The project applies deterministic OT risk scoring.
 
-Minimum prerequisites:
+| Scenario | Risk |
+|---|---:|
+| Unauthorized read against critical asset | 60 |
+| Unauthorized write against critical asset | 80 |
+| Known IOC communicating with critical asset | 90 |
+| Unauthorized manipulation + process anomaly + critical asset | 100 |
 
-- A hypervisor capable of isolated virtual networks and promiscuous capture where required.
-- Approximately 9 VMs and enough host capacity for the Wazuh indexer/dashboard and Ignition workstation.
-- Wazuh, Zeek, pfSense, OpenPLC, Ignition, InfluxDB and Conpot installation media/packages.
-- Five isolated subnets matching the addressing plan.
+This allows the SIEM to prioritize OT events using operational context instead of relying only on individual alert severity.
 
-Recommended build order:
+## 6. Process-Aware Detection
 
-1. Create the five network zones and attach pfSense interfaces.
-2. Deploy `OT-PLC01`, `OT-HIST01` and `ENG-WS01`; validate the legitimate Modbus/HMI/historian path.
-3. Insert `OT-SENSOR01` as a passive bridge and confirm Zeek visibility.
-4. Deploy `SOC-SIEM01`; ingest Zeek and pfSense telemetry before adding custom rules.
-5. Add Conpot and the controlled attack zone.
-6. Add the bastion and enforce the narrow SSH conduit.
-7. Run A01 before any attack scenario to establish the negative-control baseline.
-8. Execute A02-A10 only in the isolated lab and preserve timestamps across attacker, Zeek, Wazuh, historian and firewall evidence.
+The OpenPLC process contains tank level, flow, pressure, valves, pump state, alarms and a level setpoint.
 
-Before claiming full reproducibility, export and sanitize the real configurations listed in the roadmap.
+Selected variables:
 
----
+- HMI_START — `%QX0.0`
+- HMI_STOP — `%QX0.1`
+- HMI_RESET — `%QX0.2`
+- AUTO_MODE — `%QX0.3`
+- PUMP_RUN — `%QX1.0`
+- INLET_VALVE — `%QX1.1`
+- OUTLET_VALVE — `%QX1.2`
+- ALARM_ACTIVE — `%QX2.3`
+- TANK_LEVEL — `%QW0`
+- FLOW_RATE — `%QW1`
+- PRESSURE — `%QW2`
+- LEVEL_SP — `%QW3`
 
-## Limitations and honest scope
+The authoritative PLC logic and variable mapping are stored under `openplc/`.
 
-- **Virtualized prototype, not a production plant.** The environment validates design and detection logic, not safety certification or industrial product qualification.
-- **Reduced asset count.** Traffic, roles and timings are controlled; production thresholds require recalibration.
-- **Logical enterprise layer.** Purdue Level 4 is represented conceptually rather than by a complete IT environment.
-- **No physical process impact claim.** Historian timing provides contextual correlation; it does not by itself prove physical consequence.
-- **Local threat intelligence demonstration.** The CDB list is a controlled lab source, not an automated external intelligence feed.
-- **No high availability or redundant hardware.** The lab does not reproduce production-grade failover, MFA, centralized OT identity or offline backup architecture.
-- **Incomplete infrastructure-as-code.** The current package documents the implementation but does not yet include every sanitized Wazuh, Zeek and pfSense configuration used in the lab.
+### Addressing Note
 
-These limits are engineering boundaries, not footnotes. Full discussion: [`docs/05-hardening-and-limitations.md`](docs/05-hardening-and-limitations.md).
+The PLC source maps `LEVEL_SP` to `%QW3`.
 
----
+Some Zeek/Wazuh telemetry represents the observed Modbus register as `register:4`. Both values are preserved exactly because they originate from different addressing representations in the PLC/application and monitoring layers.
 
-## Roadmap
+## 7. False-Positive Reduction
 
-Ordered by impact:
+False-positive reduction was based on operational context instead of simply lowering alert severity.
 
-- [ ] Export and sanitize Wazuh decoders, custom rules, CDB lists and dashboard objects.
-- [ ] Export Zeek scripts and the passive-bridge configuration.
-- [ ] Export pfSense aliases/rules and the bounded-response implementation without credentials.
-- [ ] Publish the incident aggregator with sample redacted events and tests.
-- [ ] Add automated A01-A10 regression scripts and machine-readable result summaries.
-- [ ] Add external threat-intelligence ingestion with source validation and expiry.
-- [ ] Add maintenance-window context so approved engineering changes are treated differently.
-- [ ] Add canary-file ransomware detection and a safe host-isolation workflow as a separate, explicitly validated capability.
-- [ ] Add a second industrial protocol and test whether the detection model generalizes.
-- [ ] Add infrastructure snapshots and restore procedures for repeatable classroom deployment.
+Techniques used include:
 
----
+- authorized OT client allowlisting
+- source and destination context
+- critical-asset classification
+- Modbus function context
+- process-variable and value context
+- repeated-event thresholds
+- temporal correlation
+- incident deduplication and cooldown
+- negative-control testing with legitimate engineering traffic
 
-## Author
+A legitimate engineering write from ENG-WS01 was used as a negative control to confirm that authorized activity did not generate the same unauthorized-write critical detection.
 
-**Marouane Izoumaz** - Cybersecurity Engineering student, ENSIASD Taroudant
+## 8. Incident Aggregation
 
-Project title: *Conception et mise en œuvre d'un Mini-SOC pour la cybersécurité OT/ICS*.
+A Python incident aggregator monitors Wazuh alerts and creates a higher-level OT incident when high-confidence evidence occurs within a defined time window.
 
----
+Implementation:
 
-## Responsible use
+`correlation/ot-incident-aggregator.py`
 
-The attack scenarios in this project are intended only for isolated systems that you own or are explicitly authorized to test. Do not run the Modbus probes, write operations or containment workflows against production industrial systems.
+The aggregator:
 
+- consumes Wazuh JSON alerts
+- tracks relevant OT detection rules
+- uses a 60-second correlation window
+- applies a 120-second cooldown
+- requires high-confidence rule `110512`
+- writes structured incidents to `/var/log/ot-incidents.json`
+
+The generated incident is then re-ingested by Wazuh and detected by rule `160160`.
+
+Example evidence is available in:
+
+`test-data/wazuh/incident-aggregation.json`
+
+## 9. Automated Containment
+
+The project includes bounded and reversible automated containment.
+
+Workflow:
+
+Wazuh rule `100101`
+→ `ot-containment.py`
+→ pfSense `WAZUH_BLOCKLIST`
+→ temporary block against the OT network
+→ automatic removal after timeout
+
+The response validates the source IP before containment and excludes protected OT systems.
+
+The pfSense enforcement scope is:
+
+`<WAZUH_BLOCKLIST> -> 10.10.40.0/24`
+
+Captured A10 execution evidence:
+
+- `2026-08-30T23:43:53` — BLOCK `10.10.50.10` — SUCCESS
+- `2026-08-30T23:44:54` — UNBLOCK `10.10.50.10` — SUCCESS
+- `2026-08-30T23:47:13` — BLOCK `10.10.50.10` — SUCCESS
+- `2026-08-30T23:48:14` — UNBLOCK `10.10.50.10` — SUCCESS
+
+The captured tests therefore demonstrate approximately 61 seconds of bounded and reversible containment.
+
+After successful validation, automated active response was intentionally disabled to avoid unintended disruption in the lab.
+
+The current Wazuh configuration therefore contains:
+
+`<disabled>yes</disabled>`
+
+This represents the post-validation safe state, not the configuration used during the successful A10 execution.
+
+## 10. Example Attack Evidence
+
+A preserved Zeek sample shows ATTACKER01 communicating with OT-PLC01 over Modbus/TCP.
+
+Observed connection:
+
+- Source: `10.10.50.10:45898`
+- Destination: `10.10.40.41:502`
+- Zeek UID: `Cya56qiuHG6ptpPg`
+
+Observed Modbus sequence:
+
+- `WRITE_SINGLE_REGISTER` request
+- `WRITE_SINGLE_REGISTER` response
+- `WRITE_SINGLE_COIL` request
+- `WRITE_SINGLE_COIL` response
+- `WRITE_SINGLE_COIL` request
+- `WRITE_SINGLE_COIL` response
+
+Raw evidence:
+
+`test-data/zeek/unauthorized-modbus-write.json`
+
+Corresponding Wazuh evidence demonstrates contextual escalation to risk 80, followed by process-aware correlation to risk 100.
+
+## 11. Repository Structure
+
+```text
+OT-ICS-Mini-SOC/
+├── architecture/
+├── config/
+├── correlation/
+├── openplc/
+├── pfsense/
+├── response/
+├── screenshots/
+├── systemd/
+├── test-data/
+│   ├── response/
+│   ├── wazuh/
+│   └── zeek/
+├── wazuh/
+│   ├── decoders/
+│   ├── lists/
+│   └── rules/
+├── writeups/
+└── zeek/
+    └── config/
+
+```
+
+## 12. Evidence Included
+
+The repository contains compact evidence rather than complete runtime archives.
+
+Examples include:
+
+- unauthorized Modbus write telemetry
+- unauthorized-write Wazuh alerts
+- risk-80 critical-asset detections
+- process-setpoint anomaly evidence
+- risk-100 correlation sequences
+- threat-intelligence detections
+- aggregated critical OT incidents
+- bounded containment execution logs
+- representative baseline Modbus traffic
+- representative Modbus register-change telemetry
+
+Large raw logs are intentionally excluded from the public repository.
+
+## 13. Security and Sanitization
+
+The public repository intentionally excludes sensitive material.
+
+Not included:
+
+- Wazuh `client.keys`
+- pfSense SSH private keys
+- TLS private keys
+- OpenPLC `.env`
+- OpenPLC runtime databases
+- passwords
+- API tokens
+- complete pfSense configuration exports
+- complete Wazuh alert archives
+- full packet captures
+- private VM backups
+
+References to secret file paths may remain in source code when required to document how the implementation works, but the secret material itself is not included.
+
+## 14. Project Scope
+
+This repository represents a controlled educational OT/ICS cybersecurity laboratory.
+
+All attack activity was executed against isolated lab systems created specifically for the project.
+
+The project demonstrates:
+
+- OT network segmentation
+- passive industrial protocol monitoring
+- detection engineering
+- asset-aware SIEM rules
+- threat-intelligence enrichment
+- false-positive reduction
+- process-aware correlation
+- deterministic risk scoring
+- incident aggregation
+- bounded automated containment
+
+It is not intended to be deployed unchanged in a production industrial environment.

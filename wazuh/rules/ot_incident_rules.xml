@@ -1,0 +1,13 @@
+<group name="ot,ics,incident_aggregation,">
+
+  <rule id="160160" level="15">
+    <decoded_as>json</decoded_as>
+    <field name="event_type">^ot_incident$</field>
+    <field name="severity">^critical$</field>
+
+    <description>OT INCIDENT CRITICAL [$(risk_score)/100] [$(confidence) confidence]: $(summary) | $(source_ip) -> $(target_asset) ($(target_ip)) | Incident $(incident_id)</description>
+
+    <group>incident,ot_incident,critical_incident,high_confidence,risk_score_100,attack_ics_t1692_001,attack_ics_t0836,</group>
+  </rule>
+
+</group>

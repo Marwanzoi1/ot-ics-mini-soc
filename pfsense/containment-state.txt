@@ -1,0 +1,7 @@
+=== WAZUH_BLOCKLIST ===
+   192.0.2.1
+
+=== RULES REFERENCING WAZUH_BLOCKLIST ===
+block drop in log quick on em4 inet from <WAZUH_BLOCKLIST> to 10.10.40.0/24 label "USER_RULE: WAZUH - Automated containment of blocklisted OT s..." label "id:1788127053" ridentifier 1788127053
+
+=== STATES INVOLVING ATTACKER ===

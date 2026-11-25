@@ -1,0 +1,22 @@
+=== ip -br a ===
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens33            UP             10.10.20.40/24 fe80::20c:29ff:fec6:49e/64 
+ens37            UP             
+ens38            UP             
+br0              UP             fe80::68b6:45ff:fe66:ae91/64 
+
+=== ip link show master br0 ===
+3: ens37: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel master br0 state UP mode DEFAULT group default qlen 1000
+    link/ether 00:0c:29:c6:04:a8 brd ff:ff:ff:ff:ff:ff
+    altname enp2s5
+4: ens38: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel master br0 state UP mode DEFAULT group default qlen 1000
+    link/ether 00:0c:29:c6:04:b2 brd ff:ff:ff:ff:ff:ff
+    altname enp2s6
+
+=== bridge link ===
+3: ens37: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 master br0 state forwarding priority 32 cost 4 
+4: ens38: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 master br0 state forwarding priority 32 cost 4 
+
+=== zeekctl status ===
+Name         Type       Host          Status    Pid    Started
+zeek         standalone localhost     running   1496   25 Nov 13:59:58

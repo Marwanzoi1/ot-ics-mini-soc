@@ -1,0 +1,24 @@
+{
+  "pouOffsets": {
+    "FB_AlarmManager": {
+      "kind": "FUNCTION_BLOCK",
+      "startLine": 1,
+      "endLine": 37
+    },
+    "FB_ProcessSimulation": {
+      "kind": "FUNCTION_BLOCK",
+      "startLine": 39,
+      "endLine": 243
+    },
+    "FB_Pump": {
+      "kind": "FUNCTION_BLOCK",
+      "startLine": 245,
+      "endLine": 287
+    },
+    "main": {
+      "kind": "PROGRAM",
+      "startLine": 289,
+      "endLine": 471
+    }
+  }
+}

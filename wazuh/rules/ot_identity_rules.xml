@@ -1,0 +1,74 @@
+<group name="ot,ics,identity,privileged_access,">
+
+  <rule id="170100" level="10">
+    <if_sid>5402</if_sid>
+    <hostname>^ot-sensor01$</hostname>
+
+    <description>OT PRIVILEGED ACCESS: User $(srcuser) executed privileged action as $(dstuser) on OT-SENSOR01: $(command)</description>
+
+    <group>ot,ics,identity,privileged_access,sudo,ot_sensor,account_activity,</group>
+  </rule>
+
+  <rule id="170101" level="12">
+    <if_sid>170100</if_sid>
+
+    <field name="command" type="pcre2">(?i)(local\.zeek|zeekctl|systemctl.*zeek|wazuh-agent|/var/ossec/)</field>
+
+    <description>OT PRIVILEGED ACCESS HIGH: User $(srcuser) executed security-sensitive privileged command on OT-SENSOR01: $(command)</description>
+
+    <group>ot,ics,identity,privileged_access,sudo,security_control_access,high_risk_admin_activity,</group>
+  </rule>
+
+<rule id="170110" level="9">
+  <if_sid>5760</if_sid>
+  <hostname>^ot-sensor01$</hostname>
+
+  <description>OT IDENTITY ALERT: Failed SSH authentication for user $(dstuser) on OT-SENSOR01 from $(srcip)</description>
+
+  <group>ot,ics,identity,ssh,authentication_failed,ot_sensor,unauthorized_access_attempt,</group>
+</rule>
+
+<rule id="170111" level="13" frequency="8" timeframe="120">
+  <if_matched_sid>170110</if_matched_sid>
+  <same_source_ip/>
+
+  <description>OT IDENTITY CRITICAL: Repeated SSH authentication failures against OT-SENSOR01 from $(srcip)</description>
+
+  <group>ot,ics,identity,ssh,authentication_failures,brute_force,ot_sensor,critical_access_attempt,</group>
+</rule>
+
+  <rule id="170120" level="12">
+  <if_sid>5902</if_sid>
+
+  <description>OT IDENTITY HIGH: New local user $(dstuser) created on monitored OT host</description>
+
+  <group>ot,ics,identity,account_creation,persistence,unauthorized_account_change,</group>
+</rule>
+
+<rule id="170121" level="11">
+  <if_sid>170100</if_sid>
+
+  <field name="command" type="pcre2">(?i)^/usr/sbin/usermod\b</field>
+
+  <description>OT IDENTITY HIGH: User $(srcuser) modified a local account on OT-SENSOR01 using privileged command: $(command)</description>
+
+  <group>ot,ics,identity,account_change,privileged_access,ot_sensor,account_manipulation,</group>
+</rule>
+  <rule id="170122" level="10">
+    <if_sid>5903</if_sid>
+    <hostname>^ot-sensor01$</hostname>
+
+    <description>OT IDENTITY ALERT: Local user or group deleted from OT-SENSOR01</description>
+
+    <group>ot,ics,identity,account_deletion,ot_sensor,account_manipulation,</group>
+  </rule>
+
+<rule id="170130" level="14" frequency="2" timeframe="60">
+  <if_sid>170101</if_sid>
+  <if_matched_sid>160200</if_matched_sid>
+
+  <description>OT IDENTITY CORRELATION CRITICAL: User $(srcuser) performed privileged security-control activity temporally correlated with a critical Zeek configuration change on OT-SENSOR01: $(command)</description>
+
+  <group>ot,ics,identity,privileged_access,configuration_integrity,correlation,high_confidence,zeek,security_control_change,critical_identity_context,</group>
+</rule>
+</group>

@@ -15,7 +15,7 @@ Each scenario defines a source, target, expected signal, success criterion, late
 | A07 | Conpot Modbus interaction | `ATTACKER01` -> `CONPOT01:5020` | `120001` | Honeypot interaction alert | <= 10 s | PASS |
 | A08 | Repeated Conpot probing | `ATTACKER01` -> `CONPOT01:5020` | `120002` | Frequency threshold produces level-11 alert | <= 15 s | PASS |
 | A09 | Legitimate engineering action | `ENG-WS01` -> `OT-PLC01:502` | No `100101` | Authorized write succeeds without a critical unauthorized-write alert | N/A | PASS |
-| A10 | Bounded automated response | `ATTACKER01` -> trigger target | Wazuh alert + response log + pfSense evidence | Only attacker blocked; approved flows remain; block expires | Block <= 30 s | PASS |
+| A10 | Bounded automated response | `ATTACKER01` -> trigger target | Wazuh alert + response log + pfSense evidence | Only attacker blocked; approved flows remain; block expires automatically | ~61 s observed | PASS |
 
 ## Evidence requirements
 
@@ -39,7 +39,7 @@ For A06, timestamp alignment between Wazuh and InfluxDB supports investigation. 
 
 ### Containment is reversible
 
-A10 inserts the attacker into the pfSense block table and later removes it automatically. The validation also checks that legitimate engineering and historian traffic remain available.
+A10 inserts the attacker into the pfSense block table and later removes it automatically. Preserved execution logs show two complete BLOCK/UNBLOCK cycles lasting approximately 61 seconds each. After successful validation, active response was intentionally disabled as a post-validation safety measure to avoid unintended disruption during later lab work.
 
 ## Evidence images
 
@@ -47,4 +47,3 @@ A10 inserts the attacker into the pfSense block table and later removes it autom
 - [`04-unauthorized-modbus-write.jpg`](../assets/screenshots/04-unauthorized-modbus-write.jpg)
 - [`05-critical-process-correlation.jpg`](../assets/screenshots/05-critical-process-correlation.jpg)
 - [`07-bounded-pfsense-containment.jpg`](../assets/screenshots/07-bounded-pfsense-containment.jpg)
-

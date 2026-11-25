@@ -10,7 +10,7 @@
 
 ## Network visibility
 
-`OT-SENSOR01` runs Zeek in standalone mode on a passive bridge. Local scripts enable Modbus analysis and produce network/protocol evidence consumed by Wazuh.
+`OT-SENSOR01` runs Zeek in standalone mode on the transparent Layer-2 bridge interface `br0`, positioned inline on the monitored engineering-to-PLC path. Zeek passively analyzes traffic crossing the bridge without acting as the Modbus endpoint.
 
 Important telemetry includes:
 
@@ -65,4 +65,3 @@ pfSense provides inter-zone routing, policy enforcement and centralized logging.
 | `JUMP-HOST01` | 1 | 0.75-1 GB | Ubuntu Server bastion |
 
 These values reflect a resource-constrained lab, not production sizing.
-

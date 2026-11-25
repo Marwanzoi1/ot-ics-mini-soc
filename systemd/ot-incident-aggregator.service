@@ -1,0 +1,14 @@
+[Unit]
+Description=OT Incident Correlation and Aggregation Service
+After=wazuh-manager.service network.target
+Requires=wazuh-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ot-incident-aggregator.py
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

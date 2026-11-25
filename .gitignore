@@ -1,0 +1,31 @@
+# Secrets / credentials
+*.key
+*.pem
+client.keys
+.env
+*.p12
+*.pfx
+
+# Private backups
+*PRIVATE-BACKUP*
+backup/
+backups/
+
+# Runtime / database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Large/raw logs
+*.pcap
+*.pcapng
+*.log.gz
+
+# Python
+__pycache__/
+*.pyc
+
+# OS/editor
+.DS_Store
+*.swp
+*~

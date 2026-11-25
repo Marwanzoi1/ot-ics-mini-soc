@@ -1,0 +1,77 @@
+<group name="ot,ics,soc_health,">
+
+  <rule id="150110" level="0">
+    <if_sid>530</if_sid>
+    <match>ot-zeek-health</match>
+    <description>OT SOC health heartbeat: Zeek service status received</description>
+  </rule>
+
+  <rule id="150111" level="12">
+    <if_sid>150110</if_sid>
+    <regex type="pcre2">inactive|failed|unknown|deactivating</regex>
+
+    <description>OT SOC HEALTH CRITICAL: Zeek monitoring service is DOWN on OT-SENSOR01</description>
+
+    <group>ot,ics,soc_health,sensor_health,zeek,visibility_loss,critical_monitoring_failure,</group>
+  </rule>
+
+  <rule id="150120" level="0">
+  <if_sid>530</if_sid>
+  <match>ot-conpot-health</match>
+  <description>OT SOC health heartbeat: Conpot service status received</description>
+</rule>
+
+<rule id="150121" level="12">
+  <if_sid>150120</if_sid>
+  <regex type="pcre2">inactive|failed|unknown</regex>
+
+  <description>OT SOC HEALTH CRITICAL: Conpot deception service is DOWN on CONPOT01</description>
+
+  <group>ot,ics,soc_health,sensor_health,conpot,deception,visibility_loss,critical_monitoring_failure,</group>
+</rule>
+
+<rule id="150130" level="0">
+  <if_sid>530</if_sid>
+  <match>ot-sensor-agent-health</match>
+  <description>OT SOC health heartbeat: OT-SENSOR01 Wazuh agent status received</description>
+</rule>
+
+<rule id="150131" level="13">
+  <if_sid>150130</if_sid>
+  <regex type="pcre2">inactive:Disconnected</regex>
+
+  <description>OT SOC VISIBILITY CRITICAL: Wazuh agent connectivity lost for OT-SENSOR01</description>
+
+  <group>ot,ics,soc_health,agent_health,ot_sensor,visibility_loss,critical_monitoring_failure,</group>
+</rule>
+
+<rule id="150140" level="0">
+  <if_sid>530</if_sid>
+  <match>ot-conpot-agent-health</match>
+  <description>OT SOC health heartbeat: CONPOT01 Wazuh agent status received</description>
+</rule>
+
+<rule id="150141" level="12">
+  <if_sid>150140</if_sid>
+  <regex type="pcre2">inactive:Disconnected</regex>
+
+  <description>OT SOC VISIBILITY CRITICAL: Wazuh agent connectivity lost for CONPOT01</description>
+
+  <group>ot,ics,soc_health,agent_health,conpot,deception,visibility_loss,critical_monitoring_failure,</group>
+</rule>
+
+<rule id="150160" level="0">
+  <if_sid>530</if_sid>
+  <match>ot-telemetry-health</match>
+  <description>OT SOC health heartbeat: Modbus telemetry freshness received</description>
+</rule>
+
+<rule id="150161" level="12">
+  <if_sid>150160</if_sid>
+  <regex type="pcre2">silent:|missing</regex>
+
+  <description>OT SOC HEALTH CRITICAL: Modbus process telemetry is missing or stale on OT-SENSOR01</description>
+
+  <group>ot,ics,soc_health,telemetry_health,zeek,modbus,visibility_loss,telemetry_silence,</group>
+</rule>
+</group>

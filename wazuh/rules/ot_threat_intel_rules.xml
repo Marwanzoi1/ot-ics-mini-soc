@@ -1,0 +1,37 @@
+<group name="ot,ics,threat_intel,">
+
+  <rule id="130100" level="12">
+
+    <decoded_as>json</decoded_as>
+
+    <field name="id.resp_h">^10\.10\.40\.41$</field>
+    <field name="id.resp_p">^502$</field>
+
+    <field name="pdu_type">^REQ$</field>
+
+    <field name="func"
+           type="pcre2">^(READ_|WRITE_).*</field>
+
+    <list field="id.orig_h"
+          lookup="address_match_key">etc/lists/ot-threat-intel</list>
+
+    <description>OT THREAT INTEL: Known IOC source $(id.orig_h) communicating with PLC01 $(id.resp_h) - $(func)</description>
+
+    <group>ot,ics,threat_intel,ioc_match,known_threat_source,</group>
+
+  </rule>
+
+  <rule id="130101" level="13">
+
+    <if_sid>120001</if_sid>
+
+    <list field="srcip"
+          lookup="address_match_key">etc/lists/ot-threat-intel</list>
+
+    <description>OT THREAT INTEL + DECEPTION: Known IOC $(srcip) interacted with Conpot Modbus honeypot</description>
+
+    <group>ot,ics,threat_intel,ioc_match,known_threat_source,conpot,honeypot,deception,high_confidence,</group>
+
+  </rule>
+
+</group>

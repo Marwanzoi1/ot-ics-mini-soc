@@ -1,0 +1,30 @@
+<group name="syscheck,ot,ics,configuration_integrity,">
+
+  <rule id="160200" level="12">
+    <if_sid>550</if_sid>
+
+    <field name="file" type="pcre2">^/opt/zeek/share/zeek/site/local\.zeek$</field>
+
+    <description>OT CONFIG INTEGRITY HIGH: Critical Zeek monitoring configuration changed on OT-SENSOR01: $(file)</description>
+
+    <group>ot,ics,fim,configuration_integrity,zeek,sensor_config,security_control_change,</group>
+  </rule>
+    <rule id="160210" level="13">
+    <if_sid>550</if_sid>
+
+    <field name="file" type="pcre2">^(/var/ossec/etc/rules/(zz_ot_risk_rules\.xml|ot_threat_intel_rules\.xml|ot_config_integrity_rules\.xml)|/var/ossec/etc/lists/(ot-critical-assets|ot-threat-intel)|/usr/local/bin/ot-incident-aggregator\.py|/etc/systemd/system/ot-incident-aggregator\.service)$</field>
+
+    <description>OT SOC CONFIG INTEGRITY CRITICAL: Security monitoring or response configuration changed on SOC-SIEM01: $(file)</description>
+
+    <group>ot,ics,fim,configuration_integrity,soc_config,security_control_change,defense_evasion,critical_monitoring_change,</group>
+  </rule>
+<rule id="160220" level="12">
+  <if_sid>550</if_sid>
+
+  <field name="file" type="pcre2">^/home/conpot/conpot-venv/lib/python3\.10/site-packages/conpot/templates/default/(template\.xml|modbus/modbus\.xml)$</field>
+
+  <description>OT DECEPTION INTEGRITY HIGH: Critical Conpot deception configuration changed on CONPOT01: $(file)</description>
+
+  <group>ot,ics,fim,configuration_integrity,conpot,deception,deception_config,security_control_change,</group>
+</rule>
+</group>

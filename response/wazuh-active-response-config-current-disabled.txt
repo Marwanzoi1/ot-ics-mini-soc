@@ -1,0 +1,24 @@
+373-    <location>/var/log/ot-process-sim.json</location>
+374-    <log_format>json</log_format>
+375-  </localfile>  
+376-    <!-- OT/ICS containment dry-run command -->
+377-<command>
+378:  <name>ot-containment</name>
+379:  <executable>ot-containment.py</executable>
+380-  <timeout_allowed>yes</timeout_allowed>
+381-</command>
+382-
+383-<active-response>
+384-  <disabled>yes</disabled>
+385:  <command>ot-containment</command>
+386-  <location>server</location>
+387-  <rules_id>100101</rules_id>
+388-  <timeout>900</timeout>
+389-</active-response>
+390-
+391-<localfile>
+392-  <log_format>json</log_format>
+393-  <location>/var/log/ot/process-events.json</location>
+394-</localfile>
+395-
+396-</ossec_config>
